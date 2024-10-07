@@ -1,0 +1,57 @@
+{
+  "id": "token-action-hud-alternity",
+  "title": "Token Action HUD Alternity",
+  "description": "Token Action HUD is a repositionable HUD of actions for a selected token",
+  "authors": [
+    {
+      "name": "Bob",
+      "flags": {}
+    }
+  ],
+  "url": "",
+  "version": "0.004",
+  "compatibility": {
+    "minimum": "11",
+    "verified": "12.331",
+    "maximum": "12"
+  },
+  "esmodules": [
+    "scripts/init.js"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "languages/en.json",
+      "flags": {}
+    }
+  ],
+  "relationships": {
+    "systems": [
+      {
+        "id": "Alternityd100",
+        "type": "system",
+        "compatibility": [
+          null
+        ]
+      }
+    ],
+    "requires": [
+      {
+        "id": "token-action-hud-core",
+        "type": "module",
+        "compatibility": [
+          {
+            "minimum": "1.5",
+            "maximum": "1.5",
+            "verified": "1.5.4"
+          }
+        ]
+      }
+    ],
+    "flags": {
+      "optional": []
+    }
+  }
+
+}
