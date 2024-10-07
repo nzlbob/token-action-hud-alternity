@@ -8,8 +8,8 @@
       "flags": {}
     }
   ],
-  "url": "",
-  "version": "0.004",
+ 
+  "version": "0.005",
   "compatibility": {
     "minimum": "11",
     "verified": "12.331",
@@ -52,6 +52,22 @@
     "flags": {
       "optional": []
     }
+  },
+  "url": "https://github.com/nzlbob/token-action-hud-alternity",
+  "manifest": "https://raw.githubusercontent.com/nzlbob/token-action-hud-alternity/main/module.json",
+  "download": "https://github.com/nzlbob/token-action-hud-alternitye/archive/refs/heads/main.zip",
+  "media": [
+    {
+        "type": "setup",
+        "url": "modules/token-action-hud-alternity/images/VTTlogo3.png",
+        "thumbnail": "modules/token-action-hud-alternity/images/VTTlogo3.png"
+    },
+    {
+      "type": "cover",
+      "url": "https://raw.githubusercontent.com/nzlbob/alt_core/main/images/VTTlogo3.png",
+      "name": "Alternityd100 Token Action Hud"
   }
+
+  ]
 
 }
