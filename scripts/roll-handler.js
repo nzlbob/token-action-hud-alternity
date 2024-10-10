@@ -29,11 +29,9 @@ console.log("handleActionClick\n",event,"\n", encodedValue,"\n",macroType,"\n",a
           this.actor.rollAction(actionId);
           break;
         case "item":
-          this.rollItemMacro(event, actionId);
+          this.rollItemMacro(event, actionId, "item");
           break;
-        case "parry":
-          this.rollItemMacro(event, actionId, true);
-          break;
+       
         case "attribute":
           this.actor.rollAttribute(actionId);
           break;
@@ -48,9 +46,29 @@ console.log("handleActionClick\n",event,"\n", encodedValue,"\n",macroType,"\n",a
           break;
       }
     }
-    rollAttack
-    rollItemMacro(event, actionId, parry = false) {
-      this.actor.items.find((i) => i.id === actionId).rollAttack();
+ 
+    rollItemMacro(event, actionId, type) {
+      const item =  this.actor.items.find((i) => i.id === actionId)
+
+      if (item.hasAttack ) item.rollAttack();
+      
+       
+       if (item.system.type === "psionic") {
+        return this.actor.rollSkillObject(item, { event: event, skipDialog: !event.shiftKey });
+    }
+    if (item.isSkilled) {
+        return this.actor.rollSkillObject(item, { event: event, skipDialog: !event.shiftKey });
+    }
+    if (item.isChatRole) {
+        return this.actor.rollSkillObject(item, { event: event, skipDialog: !event.shiftKey });
+    }
+
+    else return item.roll();
+
+
+
+      }
+
     }
   }
-})
+)

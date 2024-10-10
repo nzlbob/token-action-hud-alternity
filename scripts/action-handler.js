@@ -6,10 +6,24 @@ import {
     VEHICLE_RESISTANCE_ID,
     VEHICLE_WEAPON_ID,
     WEAPONS_ID,
+    EQUIPMENT_ID,
+    EQUIPMENT_MEDICAL_ID,
+    EQUIPMENT_SENSOR_ID,
     VEHICLE_ACTIONS_NAME,
     VEHICLE_RESISTANCE_NAME,
     VEHICLE_WEAPON_NAME,
-    VEHICLE_ID, CREW_ID, CREW_NAME
+    VEHICLE_ID, CREW_ID, CREW_NAME,
+    COMBAT_MELEEW_ID,
+    COMBAT_RANGEDW_ID,
+    COMBAT_EXPLOS_ID,
+    COMBAT_HEAVYW_ID,
+    PSIONIC_ID,
+    PSIONIC_CON_ID,
+    PSIONIC_INT_ID,
+    PSIONIC_WIL_ID,
+    PSIONIC_PER_ID
+
+
 } from './defaults.js';
 
 export let ActionHandler = null
@@ -25,16 +39,17 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
             const tokenId = token.id;
 
             if (actor.type !== 'vehicle' && actor.type !== 'starship') {
-                await this._buildCombatActionsCategory(actor, tokenId);
-                if (actor.getFlag('Alternityd100', 'crew') !== '') {
-                    await this._buildVehicleCategory(actor, tokenId);
-                }
-                this._buildAttributesCategory(actor, tokenId);
-                this._buildSkillsCategory(actor, tokenId);
+                /*   await this._buildCombatActionsCategory(actor, tokenId);
+                   if (actor.getFlag('Alternityd100', 'crew') !== '') {
+                       await this._buildVehicleCategory(actor, tokenId);
+                   }
+                   this._buildAttributesCategory(actor, tokenId);
+                   this._buildSkillsCategory(actor, tokenId);*/
                 return;
             }
 
             if (actor.type === 'vehicle' || actor.type === 'starship') {
+               
                 /*
                 if (actor.system.embedded_pilot.value === true) {
                     await this._buildPilotCombatActionsCategory(actor, tokenId);
@@ -42,16 +57,26 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
                     this._buildSkillsCategory(actor, tokenId);
                 } else {
                     await this._buildVehicleCategory(actor, tokenId, 'action');
-                    if (actor.system.crewmembers.length > 0) {
-                        for (let i of actor.system.crewmembers) {
-                            let crewMember = await game.Alternityd100.getActorFromUuid(i.uuid);
-                            if (crewMember && (game.user.isGM || crewMember.testUserPermission(game.user, "OWNER"))) {
-                                await this._buildVehicleCategory(actor, tokenId, 'crew', crewMember);
+                */
+                if (!actor.system.crew.useNPCCrew) {
+    
+                    
+                    for (const [name, role] of Object.entries(actor.system.crew)) {
+                      //  for (let role of actor.system.crew) {
+            
+                            if(!["useNPCCrew","npcCrewQuality","npcData"].includes(name) )
+                            for (let crewMember of role.actors) {
+                              
+                                console.log("x",crewMember,crewMember.testUserPermission(game.user, "OWNER"))
+                                if (crewMember && (game.user.isGM || crewMember.testUserPermission(game.user, "OWNER"))) {
+                                    await this._buildVehicleCategory(actor, tokenId, 'crew', crewMember);
+                                }
                             }
+
                         }
-                    }
+                    
                 }
-                    */
+
             }
         }
 
@@ -67,7 +92,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
                 name = game.i18n.localize(game.Alternityd100.config.starshipToughnessName);
             }
             let encodedValue = [macroType, "vehicletoughness"].join(this.delimiter);
-            resistances.push({name: name, id: "vehicletoughness", encodedValue: encodedValue});
+            resistances.push({ name: name, id: "vehicletoughness", encodedValue: encodedValue });
 
             if (actor.system.shields.value > 0) {
                 for (let arc in actor.system.shields.arcs) {
@@ -77,11 +102,11 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
                         macroType,
                         "vehicleshields" + arc
                     ].join(this.delimiter);
-                    resistances.push({name: name, id: arc, encodedValue: encodedValue});
+                    resistances.push({ name: name, id: arc, encodedValue: encodedValue });
                 }
             }
 
-            await this.addActions(resistances, {id: RESISTANCE_ID, type: 'system'});
+            await this.addActions(resistances, { id: RESISTANCE_ID, type: 'system' });
 
             let weaponType;
             if (actor.type === "starship") {
@@ -95,7 +120,7 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
                 .sort((a, b) => a.name.localeCompare(b.name));
 
             let weaponActions = this._produceMap(weapons, macroType);
-            await this.addActions(weaponActions, {id: WEAPONS_ID, type: 'system'});
+            await this.addActions(weaponActions, { id: WEAPONS_ID, type: 'system' });
 
             let vehicleActions = [];
             for (let action in game.Alternityd100.config.vehicle_actions) {
@@ -131,36 +156,114 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
                     }
                 }
             }
-            await this.addActions(vehicleActions, {id: ACTIONS_ID, type: 'system'});
+            await this.addActions(vehicleActions, { id: ACTIONS_ID, type: 'system' });
         }
 
         async _buildCombatActionsCategory(actor, tokenId) {
             let macroType = "item";
             let items = Array.from(actor.items);
-/*
-            const resistanceTypes = ["pr", "er"];
-            let resistances = [];
-       
-            for (let r of resistanceTypes) {
-                let name = game.i18n.localize(actor.system[r].label);
-                let encodedValue = [macroType, r].join(this.delimiter);
-                resistances.push({name: name, id: r, encodedValue: encodedValue});
-            }
-
-         await this.addActions(resistances, {id: RESISTANCE_ID, type: 'system'});
-*/
-            let weapons = items
-                .filter((i) => i.type === "weapon" && i.system.equipped)
-                .sort((a, b) => a.name.localeCompare(b.name));
+            /*
+                        const resistanceTypes = ["pr", "er"];
+                        let resistances = [];
+                   
+                        for (let r of resistanceTypes) {
+                            let name = game.i18n.localize(actor.system[r].label);
+                            let encodedValue = [macroType, r].join(this.delimiter);
+                            resistances.push({name: name, id: r, encodedValue: encodedValue});
+                        }
+            
+                     await this.addActions(resistances, {id: RESISTANCE_ID, type: 'system'});
+            
+                     
+               "meleeW": "d100A.WeaponTypesMelee",
+               "rangedW": "d100A.WeaponTypesRanged",
+               "explos": "d100A.WeaponTypesExplosive",
+               "heavyW": "d100A.WeaponTypesHeavy"
+            */
             let meleeWeapons = items
                 .filter(
                     (i) => i.type === "weapon" && i.system.weaponType === "meleeW" && i.system.equipped)
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .valueOf();
-            let weaponActions = this._produceMap(weapons, macroType);
+            let meleeActions = this._produceMap(meleeWeapons, macroType);
 
-            console.log("Weapons\n",actor, items,weapons,weaponActions,macroType)
-            await this.addActions(weaponActions, {id: WEAPONS_ID, type: 'system'});
+            let rangedWeapons = items
+                .filter((i) => i.type === "weapon" && i.system.weaponType === "rangedW" && i.system.equipped)
+                .sort((a, b) => a.name.localeCompare(b.name));
+            let rangedActions = this._produceMap(rangedWeapons, macroType);
+
+            let explosiveWeapons = items
+                .filter((i) => i.type === "weapon" && i.system.weaponType === "explos" && i.system.equipped)
+                .sort((a, b) => a.name.localeCompare(b.name));
+            let explosiveActions = this._produceMap(explosiveWeapons, macroType);
+
+            let heavyWeapons = items
+                .filter((i) => i.type === "weapon" && i.system.weaponType === "heavyW" && i.system.equipped)
+                .sort((a, b) => a.name.localeCompare(b.name));
+            let heavyActions = this._produceMap(heavyWeapons, macroType);
+
+
+            console.log("Weapons\n", actor, items, rangedWeapons, rangedActions, macroType)
+
+            await this.addActions(meleeActions, { id: COMBAT_MELEEW_ID, type: 'system' });
+            await this.addActions(rangedActions, { id: COMBAT_RANGEDW_ID, type: 'system' });
+            await this.addActions(explosiveActions, { id: COMBAT_EXPLOS_ID, type: 'system' });
+            await this.addActions(heavyActions, { id: COMBAT_HEAVYW_ID, type: 'system' });
+
+            let medical = items
+                .filter((i) => i.type === "medical")
+                .sort((a, b) => a.name.localeCompare(b.name));
+            let medicalActions = this._produceMap(medical, macroType);
+
+            console.log("medical\n", actor, medical, medicalActions, macroType)
+            await this.addActions(medicalActions, { id: EQUIPMENT_MEDICAL_ID, type: 'system' });
+
+
+            let sensors = items
+                .filter((i) => i.type === "sensor")
+                .sort((a, b) => a.name.localeCompare(b.name));
+            let sensorActions = this._produceMap(sensors, macroType);
+
+            // console.log("sensors\n",actor, medical,medicalActions,macroType)
+            await this.addActions(sensorActions, { id: EQUIPMENT_SENSOR_ID, type: 'system' });
+            /**
+             * 
+             * PSIONICS
+             * 
+             */
+
+
+            let psionicCon = items
+                .filter(
+                    (i) => i.type === "psionic" && i.system.ability === "con")
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .valueOf();
+            let psiConActions = this._produceMap(psionicCon, macroType);
+
+            let psionicInt = items
+                .filter((i) => i.type === "psionic" && i.system.ability === "int")
+                .sort((a, b) => a.name.localeCompare(b.name));
+            let psiIntActions = this._produceMap(psionicInt, macroType);
+
+            let psionicWil = items
+                .filter((i) => i.type === "psionic" && i.system.ability === "wil")
+                .sort((a, b) => a.name.localeCompare(b.name));
+            let psiWilActions = this._produceMap(psionicWil, macroType);
+
+            let psionicPer = items
+                .filter((i) => i.type === "psionic" && i.system.ability === "per")
+                .sort((a, b) => a.name.localeCompare(b.name));
+            let psiPerActions = this._produceMap(psionicPer, macroType);
+
+
+
+            await this.addActions(psiConActions, { id: PSIONIC_CON_ID, type: 'system' });
+            await this.addActions(psiIntActions, { id: PSIONIC_INT_ID, type: 'system' });
+            await this.addActions(psiWilActions, { id: PSIONIC_WIL_ID, type: 'system' });
+            await this.addActions(psiPerActions, { id: PSIONIC_PER_ID, type: 'system' });
+
+
+            console.log("This", this, psiWilActions, psionicWil, psiWilActions)
 
             let combatActions = [];
             for (let action in game.Alternityd100.config.actions) {
@@ -195,12 +298,16 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
                     }
                 }
             }
-            await this.addActions(combatActions, {id: ACTIONS_ID, type: 'system'});
+            await this.addActions(combatActions, { id: ACTIONS_ID, type: 'system' });
         }
 
         async _buildVehicleCategory(actor, tokenId, categoryName, crewMember) {
+            
+            
             let macroType;
             let crewId;
+
+
 
             if (categoryName === 'crew') {
                 macroType = "crew";
@@ -208,139 +315,139 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
             } else {
                 macroType = "action";
             }
-console.log("vehicle",(actor.type === 'vehicle' || actor.type === 'starship'),actor)
+            console.log("vehicle", (actor.type === 'vehicle' || actor.type === 'starship'), actor)
             const vehicle = (actor.type === 'vehicle' || actor.type === 'starship') ?
                 actor.system : actor.system.vehicle
-            console.log(vehicle)    
-        
-        /*
-            const vehicleType = (actor.type === 'vehicle' || actor.type === 'starship') ?
-                actor.type : actor.system.vehicle.type
+            console.log(vehicle)
 
-            const items = (actor.type === 'vehicle' || actor.type === 'starship') ?
-                actor.items : actor.system.vehicle.vehicle_weapons
-
-            let resistances = [];
-            let name;
-
-            if (vehicleType === "vehicle") {
-                name = game.i18n.localize(game.Alternityd100.config.vehicleToughnessName);
-            } else {
-                name = game.i18n.localize(game.Alternityd100.config.starshipToughnessName);
-            }
-            let encodedValue = '';
-            if (crewId) {
-                encodedValue = [macroType, "vehicletoughness", crewId].join(this.delimiter);
-            } else {
-                encodedValue = [macroType, "vehicletoughness"].join(this.delimiter);
-            }
-            resistances.push({name: name, id: "vehicletoughness", encodedValue: encodedValue});
-
-            if (vehicle.shields?.value > 0) {
-                for (let arc in vehicle.shields.arcs) {
-                    let name = game.i18n.localize(vehicle.shields.arcs[arc].label) +
-                        " " + game.i18n.localize('Alternityd100.SHIELDS');
-                    let v = [
-                        macroType,
-                        "vehicleshields" + arc
-                    ]
-                    if (crewId) v.push(crewId);
-                    let encodedValue = v.join(this.delimiter);
-                    resistances.push({name: name, id: arc, encodedValue: encodedValue});
+            /*
+                const vehicleType = (actor.type === 'vehicle' || actor.type === 'starship') ?
+                    actor.type : actor.system.vehicle.type
+    
+                const items = (actor.type === 'vehicle' || actor.type === 'starship') ?
+                    actor.items : actor.system.vehicle.vehicle_weapons
+    
+                let resistances = [];
+                let name;
+    
+                if (vehicleType === "vehicle") {
+                    name = game.i18n.localize(game.Alternityd100.config.vehicleToughnessName);
+                } else {
+                    name = game.i18n.localize(game.Alternityd100.config.starshipToughnessName);
                 }
-            }
-
-            let vehicleWeapons = '';
-            if (crewId) {
-                vehicleWeapons = this._produceCrewWeaponMap(
-                    items.filter(i => i.type === vehicleType + '-weapon' && i.system?.equipped.value),
-                    macroType, crewId);
-            } else {
-                vehicleWeapons = this._produceMap(
-                    items.filter(i => i.type === vehicleType + '-weapon' && i.system?.equipped.value), macroType);
-            }
-
-            let vehicleActions = [];
-            for (let action in game.Alternityd100.config.vehicle_actions) {
-                if (game.Alternityd100.config.vehicle_actions[action].rollable) {
-                    let name = '';
-                    if (action === 'sensors') {
-                        if (game.settings.get('Alternityd100', 'sensors')) {
-                            for (let type in vehicle.sensors.types) {
-                                name = game.i18n.localize(game.Alternityd100.config.vehicle_actions[action].name) + ": " +
-                                    game.i18n.localize(vehicle.sensors.types[type].label);
-                                let v = [
-                                    macroType,
-                                    game.Alternityd100.config.vehicle_actions[action].type + type
-                                ];
-                                if (crewId) v.push(crewId);
-                                let encodedValue = v.join(this.delimiter);
-                                vehicleActions.push({
-                                    name: name,
-                                    id: type,
-                                    encodedValue: encodedValue,
-                                });
-                            }
-                        }
-                    } else {
-                        name = game.i18n.localize(game.Alternityd100.config.vehicle_actions[action].name);
+                let encodedValue = '';
+                if (crewId) {
+                    encodedValue = [macroType, "vehicletoughness", crewId].join(this.delimiter);
+                } else {
+                    encodedValue = [macroType, "vehicletoughness"].join(this.delimiter);
+                }
+                resistances.push({name: name, id: "vehicletoughness", encodedValue: encodedValue});
+    
+                if (vehicle.shields?.value > 0) {
+                    for (let arc in vehicle.shields.arcs) {
+                        let name = game.i18n.localize(vehicle.shields.arcs[arc].label) +
+                            " " + game.i18n.localize('Alternityd100.SHIELDS');
                         let v = [
                             macroType,
-                            game.Alternityd100.config.vehicle_actions[action].type
+                            "vehicleshields" + arc
                         ]
                         if (crewId) v.push(crewId);
                         let encodedValue = v.join(this.delimiter);
-                        vehicleActions.push({
-                            name: name,
-                            id: action,
-                            encodedValue: encodedValue,
-                        });
+                        resistances.push({name: name, id: arc, encodedValue: encodedValue});
                     }
                 }
-            }
-
-            if (categoryName === 'crew') {
-                const crewGroup = {nestId: 'crew_crew', id: 'crew', type: 'system'};
-
-                const newCrew = {
-                    id: CREW_ID + crewMember.uuid,
-                    name: crewMember.name,
-                    type: 'system'
-                };
-
-                const groups = [
-                    {
-                        id: crewMember.uuid + VEHICLE_RESISTANCE_ID,
-                        name: VEHICLE_RESISTANCE_NAME,
-                        type: 'system'
-                    },
-                    {
-                        id: crewMember.uuid + VEHICLE_WEAPON_ID,
-                        name: VEHICLE_WEAPON_NAME,
-                        type: 'system'
-                    },
-                    {
-                        id: crewMember.uuid + VEHICLE_ACTIONS_ID,
-                        name: VEHICLE_ACTIONS_NAME,
-                        type: 'system'
-                    }
-                ]
-
-                await this.addGroup(newCrew, crewGroup);
-                for (let i = 0; i < groups.length; i++) {
-                    await this.addGroup(groups[i], newCrew);
+    
+                let vehicleWeapons = '';
+                if (crewId) {
+                    vehicleWeapons = this._produceCrewWeaponMap(
+                        items.filter(i => i.type === vehicleType + '-weapon' && i.system?.equipped.value),
+                        macroType, crewId);
+                } else {
+                    vehicleWeapons = this._produceMap(
+                        items.filter(i => i.type === vehicleType + '-weapon' && i.system?.equipped.value), macroType);
                 }
-
-                await this.addActions(resistances, {id: crewMember.uuid + VEHICLE_RESISTANCE_ID, type: 'system'});
-                await this.addActions(vehicleWeapons, {id: crewMember.uuid + VEHICLE_WEAPON_ID, type: 'system'});
-                await this.addActions(vehicleActions, {id: crewMember.uuid + VEHICLE_ACTIONS_ID, type: 'system'});
-            } else {
-                await this.addActions(resistances, {id: VEHICLE_RESISTANCE_ID, type: 'system'});
-                await this.addActions(vehicleWeapons, {id: VEHICLE_WEAPON_ID, type: 'system'})
-                await this.addActions(vehicleActions, {id: VEHICLE_ACTIONS_ID, type: 'system'});
-            }
-
-            */
+    
+                let vehicleActions = [];
+                for (let action in game.Alternityd100.config.vehicle_actions) {
+                    if (game.Alternityd100.config.vehicle_actions[action].rollable) {
+                        let name = '';
+                        if (action === 'sensors') {
+                            if (game.settings.get('Alternityd100', 'sensors')) {
+                                for (let type in vehicle.sensors.types) {
+                                    name = game.i18n.localize(game.Alternityd100.config.vehicle_actions[action].name) + ": " +
+                                        game.i18n.localize(vehicle.sensors.types[type].label);
+                                    let v = [
+                                        macroType,
+                                        game.Alternityd100.config.vehicle_actions[action].type + type
+                                    ];
+                                    if (crewId) v.push(crewId);
+                                    let encodedValue = v.join(this.delimiter);
+                                    vehicleActions.push({
+                                        name: name,
+                                        id: type,
+                                        encodedValue: encodedValue,
+                                    });
+                                }
+                            }
+                        } else {
+                            name = game.i18n.localize(game.Alternityd100.config.vehicle_actions[action].name);
+                            let v = [
+                                macroType,
+                                game.Alternityd100.config.vehicle_actions[action].type
+                            ]
+                            if (crewId) v.push(crewId);
+                            let encodedValue = v.join(this.delimiter);
+                            vehicleActions.push({
+                                name: name,
+                                id: action,
+                                encodedValue: encodedValue,
+                            });
+                        }
+                    }
+                }
+    
+                if (categoryName === 'crew') {
+                    const crewGroup = {nestId: 'crew_crew', id: 'crew', type: 'system'};
+    
+                    const newCrew = {
+                        id: CREW_ID + crewMember.uuid,
+                        name: crewMember.name,
+                        type: 'system'
+                    };
+    
+                    const groups = [
+                        {
+                            id: crewMember.uuid + VEHICLE_RESISTANCE_ID,
+                            name: VEHICLE_RESISTANCE_NAME,
+                            type: 'system'
+                        },
+                        {
+                            id: crewMember.uuid + VEHICLE_WEAPON_ID,
+                            name: VEHICLE_WEAPON_NAME,
+                            type: 'system'
+                        },
+                        {
+                            id: crewMember.uuid + VEHICLE_ACTIONS_ID,
+                            name: VEHICLE_ACTIONS_NAME,
+                            type: 'system'
+                        }
+                    ]
+    
+                    await this.addGroup(newCrew, crewGroup);
+                    for (let i = 0; i < groups.length; i++) {
+                        await this.addGroup(groups[i], newCrew);
+                    }
+    
+                    await this.addActions(resistances, {id: crewMember.uuid + VEHICLE_RESISTANCE_ID, type: 'system'});
+                    await this.addActions(vehicleWeapons, {id: crewMember.uuid + VEHICLE_WEAPON_ID, type: 'system'});
+                    await this.addActions(vehicleActions, {id: crewMember.uuid + VEHICLE_ACTIONS_ID, type: 'system'});
+                } else {
+                    await this.addActions(resistances, {id: VEHICLE_RESISTANCE_ID, type: 'system'});
+                    await this.addActions(vehicleWeapons, {id: VEHICLE_WEAPON_ID, type: 'system'})
+                    await this.addActions(vehicleActions, {id: VEHICLE_ACTIONS_ID, type: 'system'});
+                }
+    
+                */
         }
 
         _buildAttributesCategory(actor, tokenId) {
@@ -370,7 +477,7 @@ console.log("vehicle",(actor.type === 'vehicle' || actor.type === 'starship'),ac
             );
             skills.sort((a, b) => a.name.localeCompare(b.name));
             let skillActions = this._produceMap(skills, macroType);
-            this.addActions(skillActions, {id: SKILLS_ID, type: 'system'});
+            this.addActions(skillActions, { id: SKILLS_ID, type: 'system' });
         }
 
         /** @private */
@@ -381,7 +488,7 @@ console.log("vehicle",(actor.type === 'vehicle' || actor.type === 'starship'),ac
                     let encodedValue = [macroType, i.id].join(
                         this.delimiter
                     );
-                    return {name: i.name, encodedValue: encodedValue, id: i.id};
+                    return { name: i.name, encodedValue: encodedValue, id: i.id };
                 });
         }
 
@@ -392,7 +499,7 @@ console.log("vehicle",(actor.type === 'vehicle' || actor.type === 'starship'),ac
                     let encodedValue = [macroType, i.id, crewId].join(
                         this.delimiter
                     );
-                    return {name: i.name, encodedValue: encodedValue, id: i.id};
+                    return { name: i.name, encodedValue: encodedValue, id: i.id };
                 });
         }
     }
