@@ -39,12 +39,12 @@ Hooks.once('tokenActionHudCoreApiReady', async (coreModule) => {
             const tokenId = token.id;
 
             if (actor.type !== 'vehicle' && actor.type !== 'starship') {
-                /*   await this._buildCombatActionsCategory(actor, tokenId);
+                   await this._buildCombatActionsCategory(actor, tokenId);
                    if (actor.getFlag('Alternityd100', 'crew') !== '') {
                        await this._buildVehicleCategory(actor, tokenId);
                    }
                    this._buildAttributesCategory(actor, tokenId);
-                   this._buildSkillsCategory(actor, tokenId);*/
+                   this._buildSkillsCategory(actor, tokenId);
                 return;
             }
 
