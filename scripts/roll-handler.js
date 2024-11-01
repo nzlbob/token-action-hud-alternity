@@ -50,7 +50,7 @@ console.log("handleActionClick\n",event,"\n", encodedValue,"\n",macroType,"\n",a
     rollItemMacro(event, actionId, type) {
       const item =  this.actor.items.find((i) => i.id === actionId)
 
-      if (item.hasAttack ) item.rollAttack();
+      if (item.hasAttack ) return item.rollAttack();
       
        
        if (item.system.type === "psionic") {
